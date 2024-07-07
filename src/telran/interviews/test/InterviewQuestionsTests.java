@@ -10,6 +10,7 @@ import telran.interviews.DateRole;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 class InterviewQuestionsTests {
 
@@ -20,6 +21,7 @@ class InterviewQuestionsTests {
 	private static final String ROLE1 = "Developer";
 	private static final String ROLE2 = "Senior Developer";
 	private static final String ROLE3 = "Manager";
+	
 	@Test
 	void displayOccurrencesTest() {
 		String[] strings = {"b", "a","bb", "aa", "lmn", "aa", "lmn", "lmn", "bb"};
@@ -87,8 +89,8 @@ class InterviewQuestionsTests {
 		assertArrayEquals(expectedValues, actualValues);
 	}
 	@Test
-	void isAnagrmaTest() {
-		String word = "hello";
+	void isAnagramTest() {
+		String word = "hello";     
 		assertTrue(isAnagram(word, "olleh"));
 		assertTrue(isAnagram(word, "elloh"));
 		assertTrue(isAnagram(word, "hleol"));
@@ -97,6 +99,19 @@ class InterviewQuestionsTests {
 		assertFalse(isAnagram(word, "ollhh"));
 		assertFalse(isAnagram(word, "olehd"));
 	}
+	
+	@Test
+	void isAnagramWithStreamOnlyTest() {
+		String word = "hello";     
+		assertTrue(isAnagramWithStreamOnly(word, "olleh"));
+		assertTrue(isAnagramWithStreamOnly(word, "elloh"));
+		assertTrue(isAnagramWithStreamOnly(word, "hleol"));
+		assertFalse(isAnagramWithStreamOnly(word, word));
+		assertFalse(isAnagramWithStreamOnly(word, "olle"));
+		assertFalse(isAnagramWithStreamOnly(word, "ollhh"));
+		assertFalse(isAnagramWithStreamOnly(word, "olehd"));
+	}
+	
 	@Test
 	void datesRolesAssignmentTest() {
 		List<DateRole> history =
@@ -111,8 +126,69 @@ class InterviewQuestionsTests {
 						new DateRole(DATE2,ROLE2),
 						new DateRole(DATE3, ROLE2),
 						new DateRole(DATE4, ROLE3));
+		
+		//run assignRoleDate - method without stream
 		assertIterableEquals(expected, assignRoleDates(history, dates));
+		//run assignRoleDatesWithStream - method wit stream
+		assertIterableEquals(expected, assignRoleDatesWithStream(history, dates));
 	}
+	
+	//Performance tests for 'assignRoleDates' and 'assignRoleDatesWithStream'	
+    private static final int SIZE = 100000;
+    private static final LocalDate START_DATE = LocalDate.of(2000, 1, 1);
+
+    @Test
+    void performanceTestAssignRoleDates() {
+        List<DateRole> rolesHistory = generateDateRoles(SIZE);
+        List<LocalDate> dates = generateLocalDates(SIZE);
+
+        long start = System.nanoTime();
+        List<DateRole> result = assignRoleDates(rolesHistory, dates);
+        long end = System.nanoTime();
+
+        System.out.println("assignRoleDates execution time: " + (end - start) / 1_000_000 + " ms");
+
+        assertNotNull(result);
+        assertEquals(SIZE, result.size());
+    }
+
+    @Test
+    void performanceTestAssignRoleDatesWithStream() {
+        List<DateRole> rolesHistory = generateDateRoles(SIZE);
+        List<LocalDate> dates = generateLocalDates(SIZE);
+
+        long start = System.nanoTime();
+        List<DateRole> result = assignRoleDatesWithStream(rolesHistory, dates);
+        long end = System.nanoTime();
+
+        System.out.println("assignRoleDatesWithStream execution time: " + (end - start) / 1_000_000 + " ms");
+
+        assertNotNull(result);
+        assertEquals(SIZE, result.size());
+    }
+
+    private List<DateRole> generateDateRoles(int size) {
+        List<DateRole> rolesHistory = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            LocalDate date = START_DATE.plusDays(i);
+            String role = "Role" + i;
+            rolesHistory.add(new DateRole(date, role));
+        }
+        return rolesHistory;
+    }
+
+    private List<LocalDate> generateLocalDates(int size) {
+        List<LocalDate> dates = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            LocalDate date = START_DATE.plusDays(ThreadLocalRandom.current().nextInt(size));
+            dates.add(date);
+        }
+        return dates;
+    }
+    
+    //END of Performance Tests for 'assignRoleDates' and 'assignRoleDatesWithStream' 
+	
+	
 	@Test
 	void displayDigitsStatisticsTest() {
 		displayDigitsStatistics();
